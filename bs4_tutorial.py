@@ -22,7 +22,7 @@ def get_article_text(soup):
     return soup.find('div', class_='entry-content').text
 
 
-if __name__=='__main__':
+if __name__ == '__main__':
     url = 'https://www.franksonnenbergonline.com/blog/are-you-grateful/'
     response = get_page(url)
     soup = BS(response.text, 'lxml')
