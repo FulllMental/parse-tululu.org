@@ -33,16 +33,18 @@ def download_image(book_cover_link, folder='images/'):
         file.write(book_cover_img.content)
 
 
-def get_filenames(book_index, frontpage_soup):
+def get_filename(book_index, frontpage_soup):
     title, author = frontpage_soup.find('h1').text.split('::')
-    book_cover_link = urljoin('https://tululu.org/', frontpage_soup.find('div', class_='bookimage').find('img')['src'])
-    return book_cover_link, f"{book_index}. {title.strip()}"
+    return f"{book_index}. {title.strip()}"
+
+
+def get_image_link(frontpage_soup):
+    return urljoin('https://tululu.org/', frontpage_soup.find('div', class_='bookimage').find('img')['src'])
 
 
 def get_book_comments(frontpage_soup):
     comments = frontpage_soup.find_all(class_='texts')
-    if comments:
-        [print(comment.find('span', class_='black').text) for comment in comments]
+    return comments
 
 
 if __name__ == '__main__':
@@ -57,12 +59,19 @@ if __name__ == '__main__':
 
         book_description_url = f"https://tululu.org/b{book_index}/"
         frontpage_response = get_site_response(book_description_url)
-
         frontpage_soup = BS(frontpage_response.text, 'lxml')
-        book_cover_link, filename = get_filenames(book_index, frontpage_soup)
+        filename = get_filename(book_index, frontpage_soup)
+        book_genres = frontpage_soup.find('span', class_='d_book').find_all('a')
+
+        print(f'\nЗаголовок: {filename}')
+        print([genre.text for genre in book_genres])
+
+        # book_cover_link = get_image_link(frontpage_soup)
 
         # download_image(book_cover_link)
         # download_txt(book_text, filename)
 
-        print(f'\nЗаголовок: {filename}\n{book_cover_link}')
-        get_book_comments(frontpage_soup)
+        # comments = get_book_comments(frontpage_soup)
+        # if not comments:
+        #     continue
+        # print([comment.find('span', class_='black').text for comment in comments])
