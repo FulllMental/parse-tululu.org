@@ -1,6 +1,7 @@
 import os
 from urllib.parse import urljoin
 
+import argparse
 import requests
 from bs4 import BeautifulSoup as BS
 from pathvalidate import sanitize_filename
@@ -53,7 +54,19 @@ def parse_book_page(book_page_response):
 
 
 if __name__ == '__main__':
-    for book_index in range(1, 11):
+    parser = argparse.ArgumentParser(
+        description='''Данная программа скачивает книги и их обложки с сайта "tululu.org", а так же информацию о
+        названии книги, жанре, авторе и отзывы из комментариев.
+        This program downloads books and their covers from the "tululu.org" website. As well it gather information about
+        the title of the book, genre, author and reviews from the comments.'''
+    )
+    parser.add_argument('start_id', nargs='?', type=int, default=1,
+                        help='Номер начальной страницы | First page\'s id')
+    parser.add_argument('end_id', nargs='?', type=int, default=10,
+                        help='Номер финальной страницы | Last page\'s id')
+    args = parser.parse_args()
+
+    for book_index in range(args.start_id, args.end_id + 1):
         book_page_url = f"https://tululu.org/b{book_index}/"
         book_text_url = f"https://tululu.org/txt.php?id={book_index}"
         try:
