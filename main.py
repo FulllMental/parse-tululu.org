@@ -1,5 +1,6 @@
 import argparse
 import os
+import sys
 from urllib.parse import urljoin
 
 import requests
@@ -7,14 +8,8 @@ from bs4 import BeautifulSoup as BS
 from pathvalidate import sanitize_filename
 
 
-def get_site_response(url):
-    response = requests.get(url)
-    response.raise_for_status()
-    return response
-
-
 def check_for_redirect(response):
-    if response.url == "https://tululu.org/" or response.history:
+    if response.history:
         raise requests.HTTPError()
 
 
@@ -32,16 +27,16 @@ def download_image(book_cover_img, book_cover_name, folder='images/'):
         file.write(book_cover_img.content)
 
 
-def parse_book_page(book_page_response):
+def parse_book_page(book_page_response, book_page_url):
     bookpage_soup = BS(book_page_response.text, 'lxml')
     title, author = bookpage_soup.find('h1').text.split('::')
-    parse_genres = bookpage_soup.find('span', class_='d_book').find_all('a')
-    book_genres = [genre.text for genre in parse_genres]
-    parse_comments = bookpage_soup.find_all(class_='texts')
-    book_comments = [comment.find('span', class_='black').text for comment in parse_comments]
-    parse_book_cover = bookpage_soup.find('div', class_='bookimage').find('img')['src']
-    book_cover_link = urljoin('https://tululu.org/', bookpage_soup.find('div', class_='bookimage').find('img')['src'])
-    book_cover_filename = parse_book_cover.split('/')[2]
+    genres = bookpage_soup.find('span', class_='d_book').find_all('a')
+    book_genres = [genre.text for genre in genres]
+    comments = bookpage_soup.find_all(class_='texts')
+    book_comments = [comment.find('span', class_='black').text for comment in comments]
+    book_cover = bookpage_soup.find('div', class_='bookimage').find('img')['src']
+    book_cover_link = urljoin(book_page_url, bookpage_soup.find('div', class_='bookimage').find('img')['src'])
+    book_cover_filename = book_cover.split('/')[2]
     book_description = {
         'title': title.strip(),
         'author': author.strip(),
@@ -68,24 +63,29 @@ if __name__ == '__main__':
 
     for book_index in range(args.start_id, args.end_id + 1):
         book_page_url = f"https://tululu.org/b{book_index}/"
-        book_text_url = f"https://tululu.org/txt.php?id={book_index}"
+        book_text_url = 'https://tululu.org/txt.php'
+        payload = {'id': book_index}
         try:
-            book_page_response = get_site_response(book_page_url)
+            book_page_response = requests.get(book_page_url)
+            book_page_response.raise_for_status()
             check_for_redirect(book_page_response)
 
-            book_description = parse_book_page(book_page_response)
+            book_description = parse_book_page(book_page_response, book_page_url)
             print(f'Заголовок: {book_index}. {book_description["title"]}\n\
-                    Жанры: {book_description["book_genres"]}')
+                    Жанры: {book_description["book_genres"]}\n')
 
-            book_cover_img = get_site_response(book_description['book_cover_link'])
+            book_cover_img = requests.get(book_description['book_cover_link'])
+            book_cover_img.raise_for_status()
             check_for_redirect(book_cover_img)
 
             download_image(book_cover_img, book_description['book_cover_filename'])
 
-            book_text_response = get_site_response(book_text_url)
+            book_text_response = requests.get(book_text_url, params=payload)
+            book_text_response.raise_for_status()
             check_for_redirect(book_text_response)
 
             filename = f"{book_index}. {book_description['title']}"
             download_txt(book_text_response, filename)
         except requests.HTTPError:
+            print(f'Книга с id {book_index} не найдена...\n', file=sys.stderr)
             continue
