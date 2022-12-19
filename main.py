@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+import time
 from urllib.parse import urljoin
 
 import requests
@@ -88,4 +89,8 @@ if __name__ == '__main__':
             download_txt(book_text_response, filename)
         except requests.HTTPError:
             print(f'Книга с id {book_index} не найдена...\n', file=sys.stderr)
+            continue
+        except requests.ConnectionError:
+            print('Похоже соединение с сайтом прервано, пробую продолжить работу...')
+            time.sleep(10)
             continue
