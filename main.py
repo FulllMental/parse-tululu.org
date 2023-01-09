@@ -30,21 +30,34 @@ def download_image(book_cover_img, book_cover_name, folder='images/'):
 
 def parse_book_page(book_page_response, book_page_url):
     bookpage_soup = BS(book_page_response.text, 'lxml')
-    title, author = bookpage_soup.find('h1').text.split('::')
-    genres = bookpage_soup.find('span', class_='d_book').find_all('a')
+
+    title_selector = 'h1'
+    title, author = bookpage_soup.select(title_selector)[0].text.split('::')
+
+    genre_selector = 'span.d_book a'
+    genres = bookpage_soup.select(genre_selector)
     book_genres = [genre.text for genre in genres]
-    comments = bookpage_soup.find_all(class_='texts')
-    book_comments = [comment.find('span', class_='black').text for comment in comments]
-    book_cover = bookpage_soup.find('div', class_='bookimage').find('img')['src']
-    book_cover_link = urljoin(book_page_url, bookpage_soup.find('div', class_='bookimage').find('img')['src'])
+
+    comments_selector = '.texts span.black'
+    comments = bookpage_soup.select(comments_selector)
+    book_comments = [comment.text for comment in comments]
+
+    book_cover_selector = '.bookimage img'
+    book_cover = bookpage_soup.select(book_cover_selector)[0]['src']
+    book_cover_link = urljoin(book_page_url, book_cover)
     book_cover_filename = book_cover.split('/')[2]
+
+    text_link_selector = 'table.d_book a'
+    book_text_link = urljoin(book_page_url, bookpage_soup.select(text_link_selector)[-3]['href'])
+
     book_description = {
         'title': title.strip(),
         'author': author.strip(),
+        'book_cover_link': book_cover_link,
+        'book_cover_filename': book_cover_filename,
+        'book_text_link': book_text_link,
         'book_genres': book_genres,
         'book_comments': book_comments,
-        'book_cover_link': book_cover_link,
-        'book_cover_filename': book_cover_filename
     }
     return book_description
 
@@ -64,7 +77,6 @@ if __name__ == '__main__':
 
     for book_index in range(args.start_id, args.end_id + 1):
         book_page_url = f"https://tululu.org/b{book_index}/"
-        book_text_url = 'https://tululu.org/txt.php'
         payload = {'id': book_index}
         try:
             book_page_response = requests.get(book_page_url)
@@ -81,7 +93,7 @@ if __name__ == '__main__':
 
             download_image(book_cover_img, book_description['book_cover_filename'])
 
-            book_text_response = requests.get(book_text_url, params=payload)
+            book_text_response = requests.get(book_description['book_text_link'], params=payload)
             book_text_response.raise_for_status()
             check_for_redirect(book_text_response)
 

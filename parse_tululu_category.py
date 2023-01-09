@@ -8,7 +8,7 @@ import requests
 from tqdm import tqdm
 from bs4 import BeautifulSoup as BS
 
-from main import download_txt, download_image, check_for_redirect
+from main import download_txt, download_image, check_for_redirect, parse_book_page
 
 
 def save_json_file(book_descriptions):
@@ -19,32 +19,10 @@ def save_json_file(book_descriptions):
 
 def parse_book_links(category_page_response, category_page_url):
     category_page_soup = BS(category_page_response.text, 'lxml')
-    all_books_id = category_page_soup.find_all('table', class_='d_book')
-    book_links_per_page = [urljoin(category_page_url, book_id.find('a')['href']) for book_id in all_books_id]
+    all_books_selector = '.d_book'
+    all_books_id = category_page_soup.select(all_books_selector)
+    book_links_per_page = [urljoin(category_page_url, book_id.a['href']) for book_id in all_books_id]
     return book_links_per_page
-
-
-def parse_book_page(book_page_response, book_page_url):
-    bookpage_soup = BS(book_page_response.text, 'lxml')
-    title, author = bookpage_soup.find('h1').text.split('::')
-    genres = bookpage_soup.find('span', class_='d_book').find_all('a')
-    book_genres = [genre.text for genre in genres]
-    comments = bookpage_soup.find_all(class_='texts')
-    book_comments = [comment.find('span', class_='black').text for comment in comments]
-    book_cover = bookpage_soup.find('div', class_='bookimage').find('img')['src']
-    book_cover_link = urljoin(book_page_url, bookpage_soup.find('div', class_='bookimage').find('img')['src'])
-    book_cover_filename = book_cover.split('/')[2]
-    book_text_link = urljoin(book_page_url, bookpage_soup.find('table', class_='d_book').find_all('a')[-3]['href'])
-    book_description = {
-        'title': title.strip(),
-        'author': author.strip(),
-        'book_cover_link': book_cover_link,
-        'book_cover_filename': book_cover_filename,
-        'book_text_link': book_text_link,
-        'book_genres': book_genres,
-        'book_comments': book_comments,
-    }
-    return book_description
 
 
 if __name__ == '__main__':
