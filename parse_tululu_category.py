@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import sys
@@ -5,8 +6,8 @@ import time
 from urllib.parse import urljoin
 
 import requests
-from tqdm import tqdm
 from bs4 import BeautifulSoup as BS
+from tqdm import tqdm
 
 from main import download_txt, download_image, check_for_redirect, parse_book_page
 
@@ -31,9 +32,21 @@ if __name__ == '__main__':
     book_descriptions = []
     err_statistics = []
 
+    parser = argparse.ArgumentParser(
+        description='''Данная программа скачивает книги и их обложки с сайта "tululu.org" из раздела "фантастика", а так же информацию о
+            названии книги, жанре, авторе и отзывы из комментариев, которая сохраняется в json файл.
+            This program downloads sci-fi books and their covers from the "tululu.org" website. As well it gather information about
+            the title of the book, genre, author and reviews from the comments and save it in json file.'''
+    )
+    parser.add_argument('--start_page', nargs='?', type=int, default=1,
+                        help='Номер начальной страницы | First page\'s id')
+    parser.add_argument('--end_page', nargs='?', type=int, default=702,
+                        help='Номер финальной страницы | Last page\'s id')
+    args = parser.parse_args()
+
     logging.info(f"Сбор ссылок на книги со страниц, по жанрам")
 
-    for page_index in tqdm(range(1, 11), ncols=100):
+    for page_index in tqdm(range(args.start_page, args.end_page), ncols=100):
         category_page_url = f'https://tululu.org/l55/{page_index}'
         category_page_response = requests.get(category_page_url)
         category_page_response.raise_for_status()
