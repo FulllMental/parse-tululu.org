@@ -47,9 +47,9 @@ if __name__ == '__main__':
     parser.add_argument('--end_page', nargs='?', type=int, default=702,
                         help='Номер финальной страницы | Last page\'s id')
     parser.add_argument('--skip_imgs', nargs='?', type=bool, default=False,
-                        help='Папка для скачивания | Download folder')
+                        help='Не скачивать картинки | Skip downloading images')
     parser.add_argument('--skip_txt', nargs='?', type=bool, default=False,
-                        help='Путь к *json файлу с результатами | The path to the *json file with the results')
+                        help='Не скачивать текст | Skip downloading texts')
     parser.add_argument('--dest_folder', nargs='?', type=str, default='',
                         help='Папка для скачивания | Download folder')
     parser.add_argument('--json_path', nargs='?', type=str, default='',
