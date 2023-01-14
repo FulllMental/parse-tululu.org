@@ -14,16 +14,18 @@ def check_for_redirect(response):
         raise requests.HTTPError()
 
 
-def download_txt(book_text, filename, folder='books/'):
-    os.makedirs(folder, exist_ok=True)
-    secure_book_path = os.path.join(folder, f'{sanitize_filename(filename)}.txt')
+def download_txt(book_text, filename, dest_folder='', folder='books/'):
+    download_path = os.path.join(dest_folder, folder)
+    os.makedirs(download_path, exist_ok=True)
+    secure_book_path = os.path.join(download_path, f'{sanitize_filename(filename)}.txt')
     with open(secure_book_path, 'wb') as file:
         file.write(book_text.content)
 
 
-def download_image(book_cover_img, book_cover_name, folder='images/'):
-    os.makedirs(folder, exist_ok=True)
-    image_path = os.path.join(folder, book_cover_name)
+def download_image(book_cover_img, book_cover_name, dest_folder='', folder='images/'):
+    download_path = os.path.join(dest_folder, folder)
+    os.makedirs(download_path, exist_ok=True)
+    image_path = os.path.join(download_path, book_cover_name)
     with open(image_path, 'wb') as file:
         file.write(book_cover_img.content)
 

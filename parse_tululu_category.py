@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+import os
 import sys
 import time
 from urllib.parse import urljoin
@@ -12,9 +13,12 @@ from tqdm import tqdm
 from main import download_txt, download_image, check_for_redirect, parse_book_page
 
 
-def save_json_file(book_descriptions):
+def save_json_file(book_descriptions, dest_folder):
+    filename = 'book_description.json'
+    os.makedirs(dest_folder, exist_ok=True)
     book_descriptions_json = json.dumps(book_descriptions, ensure_ascii=False)
-    with open('book_description.json', 'w') as my_file:
+    folder_path = os.path.join(dest_folder, filename)
+    with open(folder_path, 'w') as my_file:
         my_file.write(book_descriptions_json)
 
 
@@ -42,6 +46,14 @@ if __name__ == '__main__':
                         help='Номер начальной страницы | First page\'s id')
     parser.add_argument('--end_page', nargs='?', type=int, default=702,
                         help='Номер финальной страницы | Last page\'s id')
+    parser.add_argument('--skip_imgs', nargs='?', type=bool, default=False,
+                        help='Папка для скачивания | Download folder')
+    parser.add_argument('--skip_txt', nargs='?', type=bool, default=False,
+                        help='Путь к *json файлу с результатами | The path to the *json file with the results')
+    parser.add_argument('--dest_folder', nargs='?', type=str, default='',
+                        help='Папка для скачивания | Download folder')
+    parser.add_argument('--json_path', nargs='?', type=str, default='',
+                        help='Путь к *json файлу с результатами | The path to the *json file with the results')
     args = parser.parse_args()
 
     logging.info(f"Сбор ссылок на книги со страниц, по жанрам")
@@ -62,25 +74,29 @@ if __name__ == '__main__':
             book_description = parse_book_page(book_page_response, book_url)
             book_descriptions.append(book_description)
 
-            book_cover_img = requests.get(book_description['book_cover_link'])
-            book_cover_img.raise_for_status()
-            check_for_redirect(book_cover_img)
-            download_image(book_cover_img, book_description['book_cover_filename'])
+            if not args.skip_imgs:
+                book_cover_img = requests.get(book_description['book_cover_link'])
+                book_cover_img.raise_for_status()
+                check_for_redirect(book_cover_img)
+                download_image(book_cover_img, book_description['book_cover_filename'], args.dest_folder)
 
-            book_text_response = requests.get(book_description['book_text_link'])
-            book_text_response.raise_for_status()
-            check_for_redirect(book_text_response)
+            if not args.skip_txt:
+                book_text_response = requests.get(book_description['book_text_link'])
+                book_text_response.raise_for_status()
+                check_for_redirect(book_text_response)
 
-            download_txt(book_text_response, book_description['title'])
+                download_txt(book_text_response, book_description['title'], args.dest_folder)
         except requests.HTTPError:
             err_statistics.append(f"Похоже книгу {book_description['title']} не удалось скачать...")
-            # print(f"Похоже книгу {book_url} не удалось скачать...\n", file=sys.stderr)
             continue
         except requests.ConnectionError:
             print('Похоже соединение с сайтом прервано, пробую продолжить работу...')
             time.sleep(10)
             continue
     [print(err_stats, file=sys.stderr) for err_stats in err_statistics]
-    logging.info(f"Сохраняю, данные в JSON файл...\n")
 
-    save_json_file(book_descriptions)
+    logging.info(f"Сохраняю, данные в JSON файл...")
+
+    save_json_file(book_descriptions, args.dest_folder)
+
+    logging.info(f"Готово...\n")
