@@ -15,7 +15,8 @@ from main import download_txt, download_image, check_for_redirect, parse_book_pa
 
 def save_json_file(book_descriptions, dest_folder):
     filename = 'book_description.json'
-    os.makedirs(dest_folder, exist_ok=True)
+    if dest_folder:
+        os.makedirs(dest_folder, exist_ok=True)
     book_descriptions_json = json.dumps(book_descriptions, ensure_ascii=False)
     folder_path = os.path.join(dest_folder, filename)
     with open(folder_path, 'w') as my_file:
@@ -46,9 +47,9 @@ if __name__ == '__main__':
                         help='Номер начальной страницы | First page\'s id')
     parser.add_argument('--end_page', nargs='?', type=int, default=702,
                         help='Номер финальной страницы | Last page\'s id')
-    parser.add_argument('--skip_imgs', nargs='?', type=bool, default=False,
+    parser.add_argument('-skip_imgs', action='store_true',
                         help='Не скачивать картинки | Skip downloading images')
-    parser.add_argument('--skip_txt', nargs='?', type=bool, default=False,
+    parser.add_argument('-skip_txt', action='store_true',
                         help='Не скачивать текст | Skip downloading texts')
     parser.add_argument('--dest_folder', nargs='?', type=str, default='',
                         help='Папка для скачивания | Download folder')
