@@ -60,10 +60,15 @@ if __name__ == '__main__':
     logging.info(f"Сбор ссылок на книги со страниц, по жанрам")
 
     for page_index in tqdm(range(args.start_page, args.end_page), ncols=100):
-        category_page_url = f'https://tululu.org/l55/{page_index}'
-        category_page_response = requests.get(category_page_url)
-        category_page_response.raise_for_status()
-        book_urls.extend(parse_book_links(category_page_response, category_page_url))
+        try:
+            category_page_url = f'https://tululu.org/l55/{page_index}'
+            category_page_response = requests.get(category_page_url)
+            category_page_response.raise_for_status()
+            check_for_redirect(category_page_response)
+            book_urls.extend(parse_book_links(category_page_response, category_page_url))
+        except requests.HTTPError:
+            err_statistics.append(f"Похоже страницы {page_index} найти не получилось...")
+            continue
 
     logging.info(f"Сбор информации с указанных страниц / скачивание книг / обложек")
 
@@ -85,7 +90,6 @@ if __name__ == '__main__':
                 book_text_response = requests.get(book_description['book_text_link'])
                 book_text_response.raise_for_status()
                 check_for_redirect(book_text_response)
-
                 download_txt(book_text_response, book_description['title'], args.dest_folder)
         except requests.HTTPError:
             err_statistics.append(f"Похоже книгу {book_description['title']} не удалось скачать...")
