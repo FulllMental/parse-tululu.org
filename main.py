@@ -14,20 +14,12 @@ def check_for_redirect(response):
         raise requests.HTTPError()
 
 
-def download_txt(book_text, filename, dest_folder='', folder='books/'):
+def save_content(file_content, filename, dest_folder, folder):
     download_path = os.path.join(dest_folder, folder)
     os.makedirs(download_path, exist_ok=True)
-    secure_book_path = os.path.join(download_path, f'{sanitize_filename(filename)}.txt')
-    with open(secure_book_path, 'wb') as file:
-        file.write(book_text.content)
-
-
-def download_image(book_cover_img, book_cover_name, dest_folder='', folder='images/'):
-    download_path = os.path.join(dest_folder, folder)
-    os.makedirs(download_path, exist_ok=True)
-    image_path = os.path.join(download_path, book_cover_name)
-    with open(image_path, 'wb') as file:
-        file.write(book_cover_img.content)
+    file_path = os.path.join(download_path, filename)
+    with open(file_path, 'wb') as file:
+        file.write(file_content.content)
 
 
 def parse_book_page(book_page_response, book_page_url):
@@ -35,6 +27,7 @@ def parse_book_page(book_page_response, book_page_url):
 
     title_selector = 'h1'
     title, author = bookpage_soup.select(title_selector)[0].text.split('::')
+    title = title.strip()
 
     genre_selector = 'span.d_book a'
     genres = bookpage_soup.select(genre_selector)
@@ -53,10 +46,11 @@ def parse_book_page(book_page_response, book_page_url):
     book_text_link = urljoin(book_page_url, bookpage_soup.select(text_link_selector)[-3]['href'])
 
     book_description = {
-        'title': title.strip(),
+        'title': title,
         'author': author.strip(),
         'book_cover_link': book_cover_link,
         'book_cover_filename': book_cover_filename,
+        'book_text_filename': f'{sanitize_filename(title)}.txt',
         'book_text_link': book_text_link,
         'book_genres': book_genres,
         'book_comments': book_comments,
@@ -75,6 +69,8 @@ if __name__ == '__main__':
                         help='Номер начальной страницы | First page\'s id')
     parser.add_argument('end_id', nargs='?', type=int, default=10,
                         help='Номер финальной страницы | Last page\'s id')
+    parser.add_argument('--dest_folder', nargs='?', type=str, default='',
+                        help='Папка для скачивания | Download folder')
     args = parser.parse_args()
 
     for book_index in range(args.start_id, args.end_id + 1):
@@ -93,14 +89,14 @@ if __name__ == '__main__':
             book_cover_img.raise_for_status()
             check_for_redirect(book_cover_img)
 
-            download_image(book_cover_img, book_description['book_cover_filename'])
+            save_content(book_cover_img, book_description['book_cover_filename'], args.dest_folder, folder='images/')
 
             book_text_response = requests.get(book_description['book_text_link'], params=payload)
             book_text_response.raise_for_status()
             check_for_redirect(book_text_response)
 
             filename = f"{book_index}. {book_description['title']}"
-            download_txt(book_text_response, filename)
+            save_content(book_text_response, book_description['book_text_filename'], args.dest_folder, folder='books/')
         except requests.HTTPError:
             print(f'Книга с id {book_index} не найдена...\n', file=sys.stderr)
             continue
