@@ -31,6 +31,51 @@ def parse_book_links(category_page_response, category_page_url):
     return book_links_per_page
 
 
+def check_for_errors(func):
+    def wrapper(*args, **kwargs):
+        while True:
+            try:
+                func(*args, **kwargs)
+                break
+            except requests.HTTPError:
+                err_statistics.append(args[0])
+                break
+            except requests.ConnectionError:
+                print('\nПохоже соединение с сайтом прервано, пробую продолжить работу...', file=sys.stderr)
+                time.sleep(10)
+    return wrapper
+
+
+@check_for_errors
+def get_book_urls(page_index, book_urls):
+        category_page_url = f'https://tululu.org/l55/{page_index}'
+        category_page_response = requests.get(category_page_url)
+        category_page_response.raise_for_status()
+        check_for_redirect(category_page_response)
+        book_urls.extend(parse_book_links(category_page_response, category_page_url))
+
+
+@check_for_errors
+def download_content(book_url, skip_imgs, skip_txt):
+    book_page_response = requests.get(book_url)
+    book_page_response.raise_for_status()
+    check_for_redirect(book_page_response)
+    book_description = parse_book_page(book_page_response, book_url)
+    book_descriptions.append(book_description)
+
+    if not skip_imgs:
+        book_cover_img = requests.get(book_description['book_cover_link'])
+        book_cover_img.raise_for_status()
+        check_for_redirect(book_cover_img)
+        download_image(book_cover_img, book_description['book_cover_filename'], args.dest_folder)
+
+    if not skip_txt:
+        book_text_response = requests.get(book_description['book_text_link'])
+        book_text_response.raise_for_status()
+        check_for_redirect(book_text_response)
+        download_txt(book_text_response, book_description['title'], args.dest_folder)
+
+
 if __name__ == '__main__':
     logging.basicConfig(level=logging.INFO)
     book_urls = []
@@ -58,50 +103,16 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     logging.info(f"Сбор ссылок на книги со страниц, по жанрам")
-
     for page_index in tqdm(range(args.start_page, args.end_page), ncols=100):
-        try:
-            category_page_url = f'https://tululu.org/l55/{page_index}'
-            category_page_response = requests.get(category_page_url)
-            category_page_response.raise_for_status()
-            check_for_redirect(category_page_response)
-            book_urls.extend(parse_book_links(category_page_response, category_page_url))
-        except requests.HTTPError:
-            err_statistics.append(f"Похоже страницы {page_index} найти не получилось...")
-            continue
+        get_book_urls(page_index, book_urls)
 
     logging.info(f"Сбор информации с указанных страниц / скачивание книг / обложек")
-
     for book_url in tqdm(book_urls, ncols=100):
-        try:
-            book_page_response = requests.get(book_url)
-            book_page_response.raise_for_status()
-            check_for_redirect(book_page_response)
-            book_description = parse_book_page(book_page_response, book_url)
-            book_descriptions.append(book_description)
-
-            if not args.skip_imgs:
-                book_cover_img = requests.get(book_description['book_cover_link'])
-                book_cover_img.raise_for_status()
-                check_for_redirect(book_cover_img)
-                download_image(book_cover_img, book_description['book_cover_filename'], args.dest_folder)
-
-            if not args.skip_txt:
-                book_text_response = requests.get(book_description['book_text_link'])
-                book_text_response.raise_for_status()
-                check_for_redirect(book_text_response)
-                download_txt(book_text_response, book_description['title'], args.dest_folder)
-        except requests.HTTPError:
-            err_statistics.append(f"Похоже книгу {book_description['title']} не удалось скачать...")
-            continue
-        except requests.ConnectionError:
-            print('Похоже соединение с сайтом прервано, пробую продолжить работу...')
-            time.sleep(10)
-            continue
-    [print(err_stats, file=sys.stderr) for err_stats in err_statistics]
+        download_content(book_url, args.skip_imgs, args.skip_txt)
 
     logging.info(f"Сохраняю, данные в JSON файл...")
-
     save_json_file(book_descriptions, args.dest_folder)
-
+    if err_statistics:
+        logging.info(f"Кажется не удалось найти данные страницы:")
+        [print(err_stats, file=sys.stderr) for err_stats in err_statistics]
     logging.info(f"Готово...\n")
