@@ -17,10 +17,9 @@ def save_json_file(book_descriptions, dest_folder):
     filename = 'book_description.json'
     if dest_folder:
         os.makedirs(dest_folder, exist_ok=True)
-    book_descriptions_json = json.dumps(book_descriptions, ensure_ascii=False)
     folder_path = os.path.join(dest_folder, filename)
     with open(folder_path, 'w') as file:
-        file.write(book_descriptions_json)
+        json.dump(book_descriptions, file, ensure_ascii=False)
 
 
 def parse_book_links(category_page_response, category_page_url):
