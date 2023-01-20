@@ -34,8 +34,7 @@ def check_for_errors(func):
     def wrapper(*args, **kwargs):
         while True:
             try:
-                func(*args, **kwargs)
-                break
+                return func(*args, **kwargs)
             except requests.HTTPError:
                 err_statistics.append(args[0])
                 break
@@ -46,12 +45,11 @@ def check_for_errors(func):
 
 
 @check_for_errors
-def get_book_urls(page_index, book_urls):
-        category_page_url = f'https://tululu.org/l55/{page_index}'
+def get_category_response(category_page_url):
         category_page_response = requests.get(category_page_url)
         category_page_response.raise_for_status()
         check_for_redirect(category_page_response)
-        book_urls.extend(parse_book_links(category_page_response, category_page_url))
+        return category_page_response
 
 
 @check_for_errors
@@ -103,7 +101,10 @@ if __name__ == '__main__':
 
     logging.info(f"Сбор ссылок на книги со страниц, по жанрам")
     for page_index in tqdm(range(args.start_page, args.end_page), ncols=100):
-        get_book_urls(page_index, book_urls)
+        category_page_url = f'https://tululu.org/l55/{page_index}'
+        category_page_response = get_category_response(category_page_url)
+        links_per_page = parse_book_links(category_page_response, category_page_url)
+        book_urls.extend(links_per_page)
 
     logging.info(f"Сбор информации с указанных страниц / скачивание книг / обложек")
     for book_url in tqdm(book_urls, ncols=100):
