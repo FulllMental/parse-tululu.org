@@ -42,6 +42,8 @@ def parse_book_page(book_page_response, book_page_url):
     book_cover_link = urljoin(book_page_url, book_cover)
     book_cover_filename = book_cover.split('/')[2]
 
+    book_text_filename = sanitize_filename(title).replace(' ','_')
+
     text_link_selector = 'table.d_book a'
     book_text_link = urljoin(book_page_url, bookpage_soup.select(text_link_selector)[-3]['href'])
 
@@ -50,7 +52,7 @@ def parse_book_page(book_page_response, book_page_url):
         'author': author.strip(),
         'book_cover_link': book_cover_link,
         'book_cover_filename': book_cover_filename,
-        'book_text_filename': f'{sanitize_filename(title)}.txt',
+        'book_text_filename': f'{book_text_filename}.txt',
         'book_text_link': book_text_link,
         'book_genres': book_genres,
         'book_comments': book_comments,
