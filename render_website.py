@@ -17,15 +17,27 @@ def get_book_descriptions(filename, dest_folder=''):
 def rebuild_page():
     logging.warning("Изменение index.html")
     template = env.get_template('template.html')
-    rendered_page = template.render(
-        grouped_books_descriptions = grouped_books_descriptions
-    )
-    with open('index.html', 'w', encoding='utf8') as file:
-        file.write(rendered_page)
+    dest_folder = 'pages'
+    os.makedirs(dest_folder, exist_ok=True)
+
+    for books_descriptions in paginated_book_descriptions:
+        rendered_page = template.render(
+            grouped_books_descriptions = books_descriptions[1]
+        )
+        page_name = f'index{books_descriptions[0]}.html'
+        pages_path = os.path.join(dest_folder, page_name)
+        with open(pages_path, 'w', encoding='utf8') as file:
+            file.write(rendered_page)
+
+
+def paginate_book_descriptions(books_descriptions):
+    grouped_books_descriptions = list(chunked(books_descriptions, 2))
+    page_book_groups = list(chunked(grouped_books_descriptions, 5))
+    paginated_book_descriptions = [enumerated_group for enumerated_group in enumerate(page_book_groups, 1)]
+    return paginated_book_descriptions
 
 
 if __name__ == '__main__':
-    # logging.basicConfig(level=logging.DEBUG)
     env = Environment(
         loader=FileSystemLoader("."),
         autoescape=select_autoescape(['html', 'xml'])
@@ -34,7 +46,7 @@ if __name__ == '__main__':
     filename = 'book_description.json'
     dest_folder = 'downloads'
     books_descriptions = get_book_descriptions(filename, dest_folder)
-    grouped_books_descriptions = list(chunked(books_descriptions, 2))
+    paginated_book_descriptions = paginate_book_descriptions(books_descriptions)
 
     rebuild_page()
 
