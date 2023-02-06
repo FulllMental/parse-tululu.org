@@ -19,12 +19,17 @@ def rebuild_page():
     template = env.get_template('template.html')
     dest_folder = 'pages'
     os.makedirs(dest_folder, exist_ok=True)
+    total_pages = paginated_book_descriptions[-1][0]
 
     for books_descriptions in paginated_book_descriptions:
+        current_page_number = books_descriptions[0]
+        grouped_books_descriptions = books_descriptions[1]
         rendered_page = template.render(
-            grouped_books_descriptions = books_descriptions[1]
+            grouped_books_descriptions = grouped_books_descriptions,
+            current_page_number = current_page_number,
+            total_pages = total_pages
         )
-        page_name = f'index{books_descriptions[0]}.html'
+        page_name = f'index{current_page_number}.html'
         pages_path = os.path.join(dest_folder, page_name)
         with open(pages_path, 'w', encoding='utf8') as file:
             file.write(rendered_page)
