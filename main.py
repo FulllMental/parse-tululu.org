@@ -25,6 +25,11 @@ def save_content(file_content, filename, dest_folder, folder):
 def parse_book_page(book_page_response, book_page_url):
     bookpage_soup = BS(book_page_response.text, 'lxml')
 
+    text_link_selector = 'table.d_book a'
+    book_text_link = urljoin(book_page_url, bookpage_soup.select(text_link_selector)[-3]['href'])
+    if '_votes' in book_text_link:
+        raise requests.HTTPError()
+
     title_selector = 'h1'
     title, author = bookpage_soup.select(title_selector)[0].text.split('::')
     title = title.strip()
@@ -43,9 +48,6 @@ def parse_book_page(book_page_response, book_page_url):
     book_cover_filename = book_cover.split('/')[2]
 
     book_text_filename = sanitize_filename(title).replace(' ','_')
-
-    text_link_selector = 'table.d_book a'
-    book_text_link = urljoin(book_page_url, bookpage_soup.select(text_link_selector)[-3]['href'])
 
     book_description = {
         'title': title,
