@@ -25,9 +25,9 @@ def rebuild_page():
         current_page_number = books_descriptions[0]
         grouped_books_descriptions = books_descriptions[1]
         rendered_page = template.render(
-            grouped_books_descriptions = grouped_books_descriptions,
-            current_page_number = current_page_number,
-            total_pages = total_pages
+            grouped_books_descriptions=grouped_books_descriptions,
+            current_page_number=current_page_number,
+            total_pages=total_pages
         )
         page_name = f'index{current_page_number}.html'
         pages_path = os.path.join(dest_folder, page_name)
@@ -57,4 +57,4 @@ if __name__ == '__main__':
 
     server = Server()
     server.watch('template.html', rebuild_page)
-    server.serve()
+    server.serve(default_filename='pages/index1.html')
