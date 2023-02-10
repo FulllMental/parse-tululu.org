@@ -49,8 +49,8 @@ if __name__ == '__main__':
     )
 
     filename = 'book_description.json'
-    dest_folder = 'downloads'
-    books_descriptions = get_book_descriptions(filename, dest_folder)
+    logging.warning("Получение информации из *.json")
+    books_descriptions = get_book_descriptions(filename)
     paginated_book_descriptions = paginate_book_descriptions(books_descriptions)
 
     rebuild_page()

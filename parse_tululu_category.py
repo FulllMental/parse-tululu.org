@@ -13,7 +13,7 @@ from tqdm import tqdm
 from main import save_content, check_for_redirect, parse_book_page
 
 
-def save_json_file(book_descriptions, dest_folder):
+def save_json_file(book_descriptions, dest_folder=''):
     filename = 'book_description.json'
     if dest_folder:
         os.makedirs(dest_folder, exist_ok=True)
@@ -111,7 +111,7 @@ if __name__ == '__main__':
         download_content(book_url, args.skip_imgs, args.skip_txt)
 
     logging.info(f"Сохраняю, данные в JSON файл...")
-    save_json_file(book_descriptions, args.dest_folder)
+    save_json_file(book_descriptions)
     if err_statistics:
         logging.info(f"Кажется не удалось найти данные страницы:")
         [print(err_stats, file=sys.stderr) for err_stats in err_statistics]
