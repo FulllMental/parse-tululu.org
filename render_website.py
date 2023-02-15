@@ -1,3 +1,4 @@
+import argparse
 import json
 import logging
 import os
@@ -7,7 +8,7 @@ from livereload import Server
 from more_itertools import chunked
 
 
-def get_book_descriptions(filename, dest_folder=''):
+def get_book_descriptions(filename, dest_folder):
     json_path = os.path.join(dest_folder, filename)
     with open(json_path) as file:
         books_descriptions = json.load(file)
@@ -45,6 +46,14 @@ def paginate_book_descriptions(books_descriptions):
 
 
 if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='''Данная программа создаёт страницы исходя из собранных данных. 
+            This program render site pages with downloaded data.'''
+    )
+    parser.add_argument('--json_folder', nargs='?', type=str, default='',
+                        help='Директория файла *.json | *.json file directory')
+    args = parser.parse_args()
+
     env = Environment(
         loader=FileSystemLoader("."),
         autoescape=select_autoescape(['html', 'xml'])
@@ -52,7 +61,7 @@ if __name__ == '__main__':
 
     filename = 'book_description.json'
     logging.warning("Получение информации из *.json")
-    books_descriptions = get_book_descriptions(filename)
+    books_descriptions = get_book_descriptions(filename, args.json_folder)
     paginated_book_descriptions = paginate_book_descriptions(books_descriptions)
 
     rebuild_page()
