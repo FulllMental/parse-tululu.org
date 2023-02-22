@@ -10,7 +10,7 @@ from more_itertools import chunked
 
 def get_book_descriptions(filename, dest_folder):
     json_path = os.path.join(dest_folder, filename)
-    with open(json_path) as file:
+    with open(json_path, encoding='utf-8') as file:
         books_descriptions = json.load(file)
     return books_descriptions
 
@@ -52,6 +52,8 @@ if __name__ == '__main__':
     )
     parser.add_argument('--json_folder', nargs='?', type=str, default='',
                         help='Директория файла *.json | *.json file directory')
+    parser.add_argument('--json_file', nargs='?', type=str, default='book_description.json',
+                        help='название файла *.json (с расширением) | *.json filename (with extension)')
     args = parser.parse_args()
 
     env = Environment(
@@ -59,7 +61,7 @@ if __name__ == '__main__':
         autoescape=select_autoescape(['html', 'xml'])
     )
 
-    filename = 'book_description.json'
+    filename = args.json_file
     logging.warning("Получение информации из *.json")
     books_descriptions = get_book_descriptions(filename, args.json_folder)
     paginated_book_descriptions = paginate_book_descriptions(books_descriptions)
