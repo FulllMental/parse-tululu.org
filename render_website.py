@@ -37,10 +37,10 @@ def rebuild_page():
 
 
 def paginate_book_descriptions(books_descriptions):
-    books_in_row = 2
-    books_on_page = 5
-    grouped_books_descriptions = list(chunked(books_descriptions, books_in_row))
-    page_book_groups = list(chunked(grouped_books_descriptions, books_on_page))
+    cards_row = 2
+    cards_on_page = 5
+    grouped_books_descriptions = list(chunked(books_descriptions, cards_row))
+    page_book_groups = list(chunked(grouped_books_descriptions, cards_on_page))
     paginated_book_descriptions = [enumerated_group for enumerated_group in enumerate(page_book_groups, 1)]
     return paginated_book_descriptions
 
